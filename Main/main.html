@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta http-equiv="Content-Type" content="text/html;charset=utf-8" >
+    <title>Final Project</title>
+    
+<script id="vertex-shader" type="x-shader/x-vertex">
+#version 300 es
+
+in  vec3 aPosition;
+in  vec4 aColor;
+in  vec3 aNormal;
+out vec4 vColor;
+out vec3 vNormal;
+out vec3 vPosition;
+
+uniform mat4 uProjectionMatrix;
+uniform mat4 uModelViewMatrix;
+uniform mat4 uNormalMatrix;
+
+void main() {
+
+  gl_Position = uProjectionMatrix * uModelViewMatrix * vec4(aPosition, 1.0);
+
+  vPosition = (uModelViewMatrix * vec4(aPosition, 1.0)).xyz;
+  vNormal = normalize((uNormalMatrix * vec4(aNormal, 0.0)).xyz);
+  vColor = aColor;
+}
+</script>
+
+<script id="fragment-shader" type="x-shader/x-fragment">
+#version 300 es
+
+precision mediump float;
+
+in  vec4 vColor;
+in  vec3 vNormal;
+in  vec3 vPosition;
+out vec4 fColor;
+
+uniform vec3 uAmbientLight;
+uniform vec3 uLightColor;
+uniform vec4 uLightPosition;
+uniform float uShininess;
+
+uniform float uAmbientOn;
+uniform float uDiffuseOn;
+uniform float uSpecularOn;
+
+void main() {
+
+  vec3 N = normalize(vNormal);
+  vec3 L = normalize(uLightPosition.xyz - uLightPosition.w * vPosition);
+  float Kd = max(dot(L, N), 0.0);
+
+  vec3 V = -normalize(vPosition);
+  vec3 R = reflect(-L, N);
+  float Ks = pow(max(dot(V, R), 0.0), uShininess);
+  
+  vec3 ambient = uAmbientOn * uAmbientLight * vColor.rgb;
+  vec3 diffuse = uDiffuseOn * Kd * uLightColor * vColor.rgb;
+  vec3 specular = uSpecularOn * Ks * uLightColor;
+  if (dot(L, N) < 0.0) {
+    specular = vec3(0.0, 0.0, 0.0);
+  }
+
+  fColor = vec4(ambient + diffuse + specular, vColor.a);
+}
+    </script>
+
+    <script type="text/javascript" src="../Common/initShaders.js"></script>
+    <script type="text/javascript" src="../Common/MV.js"></script>
+	<script type="text/javascript" src="colors.js"></script>
+    <script type="text/javascript" src="main.js"></script>
+  </head>
+
+  <body>
+    <div>
+      <button id="xButton">Rotate X</button>
+      <button id="yButton">Rotate Y</button>
+      <button id="zButton">Rotate Z</button>
+  
+      <button id="xInc">+X</button>
+      <button id="yInc">+Y</button>
+      <button id="zInc">+Z</button>
+  
+      <button id="xDec">-X</button>
+      <button id="yDec">-Y</button>
+      <button id="zDec">-Z</button>
+    </div>
+    <div>
+      <input type="checkbox" id="ambientOn" name="ambientOn" checked>
+      <label for="ambientOn">Ambient On</label>
+      &ensp;
+      <input type="checkbox" id="diffuseOn" name="diffuseOn" checked>
+      <label for="diffuseOn">Diffuse On</label>
+      &ensp;
+      <input type="checkbox" id="specularOn" name="specularOn" checked>
+      <label for="specularOn">Specular On</label>
+      &ensp;
+      <input type="checkbox" id="oneNormalPerTriangle" name="oneNormalPerTriangle"
+             checked>
+      <label for="oneNormalPerTriangle">one normal per triangle</label>
+    </div>
+    
+    <canvas id="gl-canvas" width="512" height="512"> </canvas>
+  </body>
+</html>
